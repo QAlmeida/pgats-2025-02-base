@@ -4,7 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha test/**/*.test.js --timeout 10000 --exit",
+    "test:rest": "mocha test/rest/**/*.test.js --timeout 10000 --exit",
+    "test:graphql": "mocha test/graphql/**/*.test.js --timeout 10000 --exit",
+    "test:unit": "mocha test/unit/**/*.test.js --timeout 10000 --exit",
+    "test:coverage": "nyc --reporter=html --reporter=text mocha test/**/*.test.js --timeout 10000 --exit",
+    "test:report": "mocha test/**/*.test.js --timeout 10000 --exit --reporter mochawesome --reporter-options reportDir=test-results,reportFilename=test-report"
   },
   "repository": {
     "type": "git",
@@ -24,5 +29,13 @@
     "graphql": "^16.11.0",
     "jsonwebtoken": "^9.0.2",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "chai": "4.5.0",
+    "mocha": "^11.3.0",
+    "mochawesome": "^7.1.4",
+    "nyc": "^17.1.0",
+    "sinon": "^21.0.1",
+    "supertest": "^7.2.2"
   }
 }

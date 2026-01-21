@@ -1,0 +1,125 @@
+name: Testes Automatizados API
+
+# Quando a pipeline deve executar
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Permissões necessárias
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  # Job 1: Testes REST
+  test-rest:
+    name: Testes REST API
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      # 1. Checkout do código
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js
+      - name: Configurar Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      # 3. Instalar dependências
+      - name: Instalar dependências
+        run: npm ci
+
+      # 4. Executar testes REST
+      - name: Executar testes REST
+        run: npm run test:rest
+
+      # 5. Gerar relatório de cobertura
+      - name: Gerar relatório de cobertura
+        run: npm run test:coverage
+        continue-on-error: true
+
+      # 6. Upload do relatório de cobertura
+      - name: Upload relatório de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-node-${{ matrix.node-version }}
+          path: coverage/
+          retention-days: 30
+
+      # 7. Gerar relatório HTML
+      - name: Gerar relatório HTML
+        run: npm run test:report
+        continue-on-error: true
+
+      # 8. Upload do relatório HTML
+      - name: Upload relatório de testes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report-node-${{ matrix.node-version }}
+          path: test-results/
+          retention-days: 30
+
+      # 9. Comentar no PR com resultado (SOMENTE SE PASSOU)
+      - name: Comentar resultado no PR
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request' && success()
+        with:
+          script: |
+            const comment = `## ✅ Testes REST Passaram!
+
+            **Node.js:** ${{ matrix.node-version }}
+            **Branch:** ${context.payload.pull_request.head.ref}
+            **Commit:** ${context.sha.substring(0, 7)}
+
+            Todos os testes REST foram executados com sucesso! 🎉`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+
+  # Job 2: Lint e Validações
+  lint:
+    name: Lint e Validações
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar estrutura de arquivos
+        run: |
+          echo "Verificando estrutura do projeto..."
+          test -d test/rest && echo "✅ Pasta test/rest existe"
+          test -d test/fixtures && echo "✅ Pasta test/fixtures existe"
+          test -f test/rest/user.test.js && echo "✅ Arquivo user.test.js existe"
+          test -f test/fixtures/userFixtures.js && echo "✅ Arquivo userFixtures.js existe"

@@ -19,11 +19,11 @@ describe('POST /api/users/register', () => {
   /**
    * Restaura o array para o estado inicial
    */
-  beforeEach(() => {
-    // Limpa o array de usuários
+beforeEach(() => {
+    // limpa array
     users.length = 0;
 
-    // Restaura os usuários padrão
+    // restaura estado inicial
     users.push(
       { id: 1, name: 'Alice', email: 'alice@email.com', password: '123456' },
       { id: 2, name: 'Bob', email: 'bob@email.com', password: '123456' }

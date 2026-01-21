@@ -76,17 +76,19 @@ jobs:
           path: test-results/
           retention-days: 30
 
-      # 9. Comentar no PR com resultado
+      # 9. Comentar no PR com resultado (SOMENTE SE PASSOU)
       - name: Comentar resultado no PR
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && success()
         with:
           script: |
-            const fs = require('fs');
-            let comment = '## 🧪 Resultado dos Testes REST\n\n';
-            comment += '✅ Testes executados com sucesso!\n\n';
-            comment += `**Node.js:** ${{ matrix.node-version }}\n`;
-            comment += `**Branch:** ${context.payload.pull_request.head.ref}\n`;
+            const comment = `## ✅ Testes REST Passaram!
+
+            **Node.js:** ${{ matrix.node-version }}
+            **Branch:** ${context.payload.pull_request.head.ref}
+            **Commit:** ${context.sha.substring(0, 7)}
+
+            Todos os testes REST foram executados com sucesso! 🎉`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -94,6 +96,7 @@ jobs:
               repo: context.repo.repo,
               body: comment
             });
+
 
   # Job 2: Lint e Validações
   lint:

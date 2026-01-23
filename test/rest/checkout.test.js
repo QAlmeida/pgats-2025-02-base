@@ -103,9 +103,8 @@ it('Deve fazer checkout com múltiplos produtos e aplicar desconto', async () =>
   expect(response.body.items).to.have.lengthOf(2);
 });
 
-
   /**
-   * TESTE 4: Erro ao fazer checkout sem token
+   * TESTE 4: Erro ao fazer checkout se token
    */
   it('Deve retornar erro 401 ao fazer checkout sem token', async () => {
     const response = await request(app)

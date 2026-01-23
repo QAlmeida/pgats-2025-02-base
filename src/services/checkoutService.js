@@ -16,12 +16,19 @@ function calculateTotal(items, freight, paymentMethod) {
 }
 
 function checkout(userId, items, freight, paymentMethod, cardData) {
+  // Validar quantidade
+  for (const item of items) {
+    if (!item.quantity || item.quantity <= 0) {
+      throw new Error('Quantidade deve ser maior que zero');
+    }
+  }
+
   if (paymentMethod === 'credit_card' && !cardData) {
     throw new Error('Dados do cartão obrigatórios para pagamento com cartão');
   }
+
   // Simula o registro do pedido
   const total = calculateTotal(items, freight, paymentMethod);
   return { userId, items, freight, paymentMethod, total };
 }
-
 module.exports = { calculateTotal, checkout };

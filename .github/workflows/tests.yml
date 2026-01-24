@@ -5,18 +5,18 @@ on:
     branches: [ main, develop, feature/** ]
   pull_request:
     branches: [ main, develop ]
-  workflow_dispatch:
+  workflow_dispatch:   # permite rodar manualmente se precisar
 
 jobs:
-  # Job 1: Testes REST API
+  # -----------------------------------------------------------------
+  # 1️⃣ Testes REST
+  # -----------------------------------------------------------------
   test-rest:
     name: Testes REST API (${{ matrix.node-version }})
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
       - name: Executar testes REST
         run: npm run test:rest
 
-      - name: Upload de relatório de cobertura
+      - name: Upload de relatório de cobertura (REST)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -41,15 +41,15 @@ jobs:
           path: coverage/
           retention-days: 7
 
-  # Job 2: Testes Unitários
+  # -----------------------------------------------------------------
+  # 2️⃣ Testes Unitários (Sinon)
+  # -----------------------------------------------------------------
   test-unit:
     name: Testes Unitários (${{ matrix.node-version }})
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -66,19 +66,52 @@ jobs:
       - name: Executar testes unitários
         run: npm run test:unit
 
-      - name: Upload de relatório de cobertura
+      - name: Upload de relatório de cobertura (Unit)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-unit-${{ matrix.node-version }}
+          path: coverage          retention-days: 7
+
+  # -----------------------------------------------------------------
+  # 3️⃣ Testes GraphQL
+  # -----------------------------------------------------------------
+  test-graphql:
+    name: Testes GraphQL (${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Executar testes GraphQL
+        run: npm run test:graphql
+
+      - name: Upload de relatório de cobertura (GraphQL)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-graphql-${{ matrix.node-version }}
           path: coverage/
           retention-days: 7
 
-  # Job 3: Lint e Validações
+  # -----------------------------------------------------------------
+  # 4️⃣ Lint e Validações
+  # -----------------------------------------------------------------
   lint:
     name: Lint e Validações
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v4
@@ -101,43 +134,41 @@ jobs:
           echo "✓ Estrutura de testes validada"
           ls -la test/rest/
           ls -la test/unit/
+          ls -la test/graphql/
 
-  # Job 4: Comentário no PR com resumo dos testes
+  # -----------------------------------------------------------------
+  # 5️⃣ Comentário no PR (REST + Unit + GraphQL)
+  # -----------------------------------------------------------------
   comment-pr:
-    name: Comentar resultado no PR
+    name: Comentário no PR
     runs-on: ubuntu-latest
-    needs: [test-rest, test-unit, lint]
+    needs: [test-rest, test-unit, test-graphql, lint]
     if: github.event_name == 'pull_request'
     permissions:
       pull-requests: write
-
     steps:
-      - name: Comentar no PR
+      - name: Comentário resumido
         uses: actions/github-script@v7
         with:
           script: |
-            const comment = `## ✅ Testes Automatizados - Resultado
+            const comment = `## ✅ Testes Automatizados – Resultado
 
-            Todos os testes foram executados com sucesso! 🎉
-
-            ### 📊 Resumo da Pipeline
+            **Todos os testes foram executados com sucesso!** 🎉
 
             | Tipo de Teste | Node 18.x | Node 20.x | Status |
             |---------------|-----------|-----------|--------|
-            | **Testes REST API** | ✅ Passou | ✅ Passou | ✅ |
-            | **Testes Unitários (Sinon)** | ✅ Passou | ✅ Passou | ✅ |
-            | **Lint e Validações** | - | ✅ Passou | ✅ |
+            | **REST API** | ✅ Passou | ✅ Passou | ✅ |
+            | **Unitários (Sinon)** | ✅ Passou | ✅ Passou | ✅ |
+            | **GraphQL** | ✅ Passou | ✅ Passou | ✅ |
+            | **Lint & Validações** | - | ✅ Passou | ✅ |
 
-            ### 🧪 Detalhes dos Testes
+            ### 📊 Contagem total de testes
+            - REST: 15
+            - Unitários: 14
+            - GraphQL: 11
+            - **Total:** **40** testes automatizados
 
-            - **Testes REST**: 15 testes de integração (user + checkout)
-            - **Testes Unitários**: 14 testes com Sinon (checkoutController + userController)
-            - **Total**: 29 testes automatizados
-
-            ### 🚀 Próximos Passos
-
-            ✅ Todos os checks passaram - pode fazer merge com segurança!
-            `;
+            ✅ **Tudo verde** – pode fazer merge com tranquilidade!`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,

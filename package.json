@@ -9,7 +9,9 @@
     "test:graphql": "mocha test/graphql/**/*.test.js --timeout 10000 --exit",
     "test:unit": "mocha test/unit/**/*.test.js --timeout 10000 --exit",
     "test:coverage": "nyc --reporter=html --reporter=text mocha test/**/*.test.js --timeout 10000 --exit",
-    "test:report": "mocha test/**/*.test.js --timeout 10000 --exit --reporter mochawesome --reporter-options reportDir=test-results,reportFilename=test-report"
+    "test:report": "mocha test/**/*.test.js --timeout 10000 --exit --reporter mochawesome --reporter-options reportDir=test-results,reportFilename=test-report",
+    "perf:test": "k6 run test/k6/tests/api-performance.test.js",
+    "perf:test:html": "k6 run --out html=test/k6/report.html test/k6/tests/api-performance.test.js"
   },
   "repository": {
     "type": "git",
@@ -32,6 +34,7 @@
   },
   "devDependencies": {
     "chai": "4.5.0",
+    "k6": "^0.0.0",
     "mocha": "^11.3.0",
     "mochawesome": "^7.1.4",
     "nyc": "^17.1.0",
